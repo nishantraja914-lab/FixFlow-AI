@@ -1,0 +1,96 @@
+import { Toaster } from "@/components/ui/toaster"
+import { QueryClientProvider } from '@tanstack/react-query'
+import { queryClientInstance } from '@/lib/query-client'
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import PageNotFound from './lib/PageNotFound';
+import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import UserNotRegisteredError from '@/components/UserNotRegisteredError';
+import ScrollToTop from './components/ScrollToTop';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import Landing from '@/pages/Landing';
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+import AppLayout from '@/components/AppLayout';
+import AppHome from '@/pages/AppHome';
+import ReporterDashboard from '@/pages/ReporterDashboard';
+import ReportProblem from '@/pages/ReportProblem';
+import MyComplaints from '@/pages/MyComplaints';
+import StaffDashboard from '@/pages/StaffDashboard';
+import AdminDashboard from '@/pages/AdminDashboard';
+import AllComplaints from '@/pages/AllComplaints';
+import MaintenanceTeam from '@/pages/MaintenanceTeam';
+import ComplaintDetails from '@/pages/ComplaintDetails';
+import NotificationsPage from '@/pages/NotificationsPage';
+import Profile from '@/pages/Profile';
+// Add page imports here
+
+const AuthenticatedApp = () => {
+  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+
+  // Show loading spinner while checking app public settings or auth
+  if (isLoadingPublicSettings || isLoadingAuth) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Handle authentication errors
+  if (authError) {
+    if (authError.type === 'user_not_registered') {
+      return <UserNotRegisteredError />;
+    } else if (authError.type === 'auth_required') {
+      // Redirect to login automatically
+      navigateToLogin();
+      return null;
+    }
+  }
+
+  // Render the main app
+  return (
+  <Routes>
+    <Route path="/" element={<Landing />} />
+    <Route path="/login" element={<Login />} />
+    <Route path="/register" element={<Register />} />
+    <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Route path="/reset-password" element={<ResetPassword />} />
+    <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+      <Route element={<AppLayout />}>
+        <Route path="/app" element={<AppHome />} />
+        <Route path="/reporter" element={<ReporterDashboard />} />
+        <Route path="/report" element={<ReportProblem />} />
+        <Route path="/my-complaints" element={<MyComplaints />} />
+        <Route path="/staff" element={<StaffDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/complaints" element={<AllComplaints />} />
+        <Route path="/team" element={<MaintenanceTeam />} />
+        <Route path="/complaint/:id" element={<ComplaintDetails />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/profile" element={<Profile />} />
+      </Route>
+    </Route>
+    <Route path="*" element={<PageNotFound />} />
+  </Routes>
+  );
+  };
+
+
+function App() {
+
+  return (
+    <AuthProvider>
+      <QueryClientProvider client={queryClientInstance}>
+        <Router>
+          <ScrollToTop />
+          <AuthenticatedApp />
+        </Router>
+        <Toaster />
+      </QueryClientProvider>
+    </AuthProvider>
+  )
+}
+
+export default App
